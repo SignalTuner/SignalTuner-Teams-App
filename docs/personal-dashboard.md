@@ -1,5 +1,27 @@
 # Teams personal dashboard
 
+## Mobile connectivity summary (2026-11-06)
+
+At viewport widths up to 600px, the shared connectivity summary keeps Signal
+Score in the left column spanning three rows, with Workspace, Network and Device
+stacked in the right column. This applies to personal health, meeting-history
+participants and the full meeting participant cards. Wider layouts are unchanged.
+Status values, offline handling, APIs and analysis actions are unchanged.
+
+On mobile, Test Analysis and Analysis + Report share two equal-width columns;
+credit/availability messages span the row below. Meeting participant Analyze
+buttons are centered beneath the score/status divider. Built-CSS browser checks
+at 320, 390 and 600px verify button alignment and equal personal button heights;
+1280px retains the desktop action layout. Both 320px previews were visually reviewed.
+
+Validation: 13 personal-dashboard checks, TypeScript and the DreamHost static
+build passed. Local browser previews of the actual shared component with synthetic
+active/offline data passed at 320, 390, 600 and 1280px for personal and meeting-modal
+containers, with no metrics overflow; the 320px modal was visually reviewed.
+Publish the contents of `dist/dreamhost` to `teams.signaltuner.com` to release this
+CSS-only change. No Teams manifest ZIP, backend, website, database or Azure change
+is required. No upload was performed.
+
 The existing personal tab validates a saved SignalTuner session with `/api/auth/me`
 independently of meeting context. As of 2026-10-27, Teams SSO is temporarily paused
 by `TEAMS_SSO_ENABLED = false` in `src/Tab/App.tsx`: sign-in/account-creation buttons,

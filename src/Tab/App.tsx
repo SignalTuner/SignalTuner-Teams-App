@@ -1682,6 +1682,7 @@ function SupportAuthPage({
       <div className="authHeader">
         <h1 id="auth-title">Support</h1>
         <p>Send a message to support@signaltuner.com.</p>
+        <p><a href="https://www.signaltuner.com/setup-guide" target="_blank" rel="noopener noreferrer">Setup guide (opens the SignalTuner website)</a></p>
       </div>
       <SupportForm defaultEmail={defaultEmail} onSubmit={onSendSupportEmail} />
       <button className="secondaryButton fullWidthButton" onClick={onSignIn} type="button">

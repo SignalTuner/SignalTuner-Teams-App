@@ -10,6 +10,7 @@ function Check([bool]$condition, [string]$message) {
 $source = Get-Content -LiteralPath (Join-Path $root "appPackage/manifest.json") -Raw -Encoding UTF8
 $manifest = $source | ConvertFrom-Json
 Check ($manifest.name.short -eq "SignalTuner") "Use SignalTuner without a local/dev/custom suffix."
+Check ($manifest.name.full -eq "SignalTuner") "Use SignalTuner as the full app name, matching the short name and marketplace listing; omit Microsoft product names."
 Check ($manifest.developer.name -eq "SignalTuner Inc.") "Confirm the SignalTuner publisher name."
 Check ($manifest.developer.websiteUrl -eq "https://www.signaltuner.com") "Replace the placeholder publisher website."
 Check ($manifest.description.short.Length -le 80) "Short description exceeds 80 characters."
@@ -17,6 +18,7 @@ Check ($manifest.description.full.Length -le 4000) "Full description exceeds 400
 Check ($manifest.webApplicationInfo.id -eq $manifest.bots[0].botId) "Bot and SSO/RSC identities differ."
 Check ($manifest.version -match '^\d+\.\d+\.\d+$') "App version must have three numeric components."
 Check ($source -notmatch 'example\.com|My App, Inc\.|Teams Test App') "Manifest contains template branding."
+Check (@($manifest.validDomains).Count -eq 1 -and $manifest.validDomains[0] -ceq '${{TAB_DOMAIN}}') "validDomains must contain only the environment's TAB_DOMAIN; external links and API hosts are not embedded app origins."
 
 Add-Type -AssemblyName System.Drawing
 foreach ($variant in @(@{ Key = "color"; Size = 192 }, @{ Key = "outline"; Size = 32 })) {
@@ -27,6 +29,7 @@ foreach ($variant in @(@{ Key = "color"; Size = 192 }, @{ Key = "outline"; Size 
         Check ($icon.RawFormat.Guid -eq [System.Drawing.Imaging.ImageFormat]::Png.Guid) "$file must contain PNG image data."
         Check ($icon.Width -eq $variant.Size -and $icon.Height -eq $variant.Size) "$file must be $($variant.Size) x $($variant.Size)."
         $hasVisible = $false; $hasTransparent = $false; $validPixels = $true
+        $hasColorSymbol = $false; $validColorPadding = $true
         for ($y = 0; $y -lt $icon.Height; $y++) {
             for ($x = 0; $x -lt $icon.Width; $x++) {
                 $pixel = $icon.GetPixel($x, $y)
@@ -34,12 +37,22 @@ foreach ($variant in @(@{ Key = "color"; Size = 192 }, @{ Key = "outline"; Size 
                 if ($pixel.A -eq 0) { $hasTransparent = $true }
                 if ($variant.Key -eq "outline") {
                     if ($pixel.A -gt 0 -and ($pixel.R -ne 255 -or $pixel.G -ne 255 -or $pixel.B -ne 255)) { $validPixels = $false }
-                } elseif ($pixel.A -ne 255) { $validPixels = $false }
+                } else {
+                    if ($pixel.A -ne 255) { $validPixels = $false }
+                    if ($pixel.R -ne 0 -or $pixel.G -ne 0 -or $pixel.B -ne 0) {
+                        $hasColorSymbol = $true
+                        if ($x -lt 48 -or $x -ge 144 -or $y -lt 48 -or $y -ge 144) { $validColorPadding = $false }
+                    }
+                }
             }
         }
         Check $hasVisible "$file is empty."
         Check $validPixels "$file must be opaque for color, or white with transparency for outline."
         if ($variant.Key -eq "outline") { Check $hasTransparent "Outline must have a transparent background." }
+        else {
+            Check $hasColorSymbol "Color icon must contain a visible symbol on black."
+            Check $validColorPadding "Color icon must retain a black background outside the centered 96 x 96 symbol area."
+        }
     } finally { $icon.Dispose() }
 }
 
@@ -55,6 +68,7 @@ if ($EnvironmentFile) {
         Check (-not [string]::IsNullOrWhiteSpace($values[$key])) "Missing production $key."
     }
     Check ($values["TEAMSFX_ENV"] -eq "prod") "Use an explicitly production environment, not local/dev."
+    Check ($values["TAB_DOMAIN"] -ceq "teams.signaltuner.com") "Production validDomains must resolve to teams.signaltuner.com only, without a scheme, www prefix, path, wildcard or API host."
     $appId = [Guid]::Empty
     Check ([Guid]::TryParse($values["TEAMS_APP_ID"], [ref]$appId) -and $appId -ne [Guid]::Empty) "Production TEAMS_APP_ID must be a nonempty GUID."
     $endpoint = $null

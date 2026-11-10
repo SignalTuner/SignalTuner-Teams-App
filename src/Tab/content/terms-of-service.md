@@ -148,7 +148,7 @@ You are responsible for taxes associated with your purchase except taxes imposed
 
 ## 7. Payment Processing
 
-In SignalTuner for Microsoft Teams, purchase links available on desktop and web open a website outside Microsoft Teams. Checkout and billing take place through Stripe, where payment details are entered. The applicable price and terms are presented before a purchase is confirmed. Payment details are not entered in the Teams interface.
+When using SignalTuner in Microsoft Teams, purchase links available on desktop and web open a website outside Microsoft Teams. Checkout and billing take place through Stripe, where payment details are entered. The applicable price and terms are presented before a purchase is confirmed. Payment details are not entered in the Teams interface.
 
 SignalTuner may accept payments directly through third-party payment processors such as Stripe or through platforms such as Microsoft Marketplace.
 

@@ -48,6 +48,15 @@ Vite's asset base and copies `hosting/dreamhost/.htaccess` automatically.
 `npm run build` retains the local Node build and cleans `dist`, so run
 `build:dreamhost` **after** a local full build when preparing upload files.
 
+Manifest 1.0.20 uses only `${{TAB_DOMAIN}}` in `validDomains`, resolving to
+`teams.signaltuner.com` in production and the existing local host in development.
+The website/download destinations open externally; the Azure backend is used for
+API requests and bot messaging, not Teams embedded pages. Neither belongs in the
+current embedded-origin allowlist. API URLs, CORS, CSP, Entra configuration and
+the bot messaging endpoint remain unchanged. This correction requires an updated
+Teams package and Partner Center resubmission, not a DreamHost upload. See
+[domain correction and portal steps](store-submission.md#valid-domain-correction-2026-11-05).
+
 ## Configuration ownership
 
 | Configuration | Owner / consumer | Value and handling |

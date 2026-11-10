@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.27/MicrosoftTeams.schema.json",
   "manifestVersion": "1.27",
-  "version": "1.0.18",
+  "version": "1.0.22",
   "id": "${{TEAMS_APP_ID}}",
   "developer": {
     "name": "SignalTuner Inc.",
@@ -15,11 +15,11 @@
   },
   "name": {
     "short": "SignalTuner",
-    "full": "SignalTuner for Microsoft Teams"
+    "full": "SignalTuner"
   },
   "description": {
-    "short": "Understand connectivity health before and during Teams meetings.",
-    "full": "SignalTuner helps meeting participants and support teams understand connectivity problems without leaving Microsoft Teams. View your connectivity dashboard, monitor Microsoft Teams service incidents, and share connectivity status with other signed-in SignalTuner participants in a meeting. Request five-minute connectivity analyses and review meeting history. A SignalTuner account is required; create an account in the app. Live device telemetry and device analyses require the SignalTuner desktop app on the computer being monitored. Reports use credits, and analyses of other participants follow account permissions and device-consent rules. Meeting invitations require the SignalTuner bot to be installed in the meeting chat; channel-meeting invitations are not supported. For setup assistance, contact support@signaltuner.com."
+    "short": "Understand connectivity health before and during Microsoft Teams meetings.",
+    "full": "SignalTuner helps meeting participants and support staff understand connectivity problems within Microsoft Teams.\n\n**A SignalTuner account is required to access and use the app's functionality.** Sign in with your existing SignalTuner account or [Sign up](${{TAB_ENDPOINT}}/tabs/create-account) using the app's account creation page.\n\n**What you can do**\n\n- View your connectivity dashboard and monitor Teams service incidents.\n- Share connectivity status with other signed-in SignalTuner participants in a meeting.\n- Request five-minute connectivity analyses and review meeting history.\n\n**Get started**\n\nLive device telemetry and device analyses require the SignalTuner desktop app on the computer being monitored. [Get started: download the desktop app](https://www.signaltuner.com/downloads/) from the SignalTuner website, then follow the activation steps in the app.\n\n**Requirements and limitations**\n\nReports use credits, and analyses of other participants follow account permissions and device-consent rules. Meeting invitations require the SignalTuner bot to be installed in the meeting chat; channel-meeting invitations are not supported.\n\n**Help and support**\n\nOpen [Setup guide](https://www.signaltuner.com/setup-guide), or [Contact support](mailto:support@signaltuner.com) at support@signaltuner.com."
   },
   "accentColor": "#FFFFFF",
   "bots": [
@@ -64,10 +64,7 @@
   },
   "permissions": ["identity"],
   "validDomains": [
-    "${{TAB_DOMAIN}}",
-    "teams.signaltuner.com",
-    "www.signaltuner.com",
-    "signaltuner-back.azurewebsites.net"
+    "${{TAB_DOMAIN}}"
   ],
   "authorization": {
     "permissions": {

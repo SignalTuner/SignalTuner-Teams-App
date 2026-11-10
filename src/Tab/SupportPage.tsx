@@ -71,6 +71,7 @@ export default function SupportPage({ onSendSupportEmail, defaultEmail = "", def
           <p className="support-eyebrow">SIGNALTUNER SUPPORT</p>
           <h1 id="support-heading">Contact support</h1>
           <p>Need help with your account, downloads, or connectivity reports? Send us a message and our team will get back to you.</p>
+          <p><a href="https://www.signaltuner.com/setup-guide" target="_blank" rel="noopener noreferrer">Setup guide (opens the SignalTuner website)</a></p>
         </div>
         <AppearanceSelector value={themePreference} onChange={onThemePreferenceChange} />
       </header>

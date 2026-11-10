@@ -11,6 +11,31 @@ The physical folder rename is pending a Windows open-folder lock. Follow the
 the directory, all five project maps and the shared workspace together.
 
 Public Store preparation: [submission review and release checklist](docs/store-submission.md).
+Latest source manifest: **1.0.22**, with aligned account disclosure, structured
+descriptions, explicit Microsoft Teams first references and onboarding/support
+links. Paste-ready [Partner Center HTML](docs/partner-center-description.html)
+and [update instructions](docs/store-submission.md#marketplace-description-alignment-2026-11-05)
+are prepared. No Partner Center update has been performed.
+Current production package: **1.0.22**, generated and locally validated on
+2026-11-06 at `appPackage/build/SignalTuner-production-1.0.22.zip`. It includes
+the revised descriptions, public Setup guide link and the existing
+black-background color/transparent outline icons. No upload or submission
+was performed; earlier ZIPs are preserved. The welcome handler, public guide and
+hosted support links require separate backend, website and Teams frontend deployments.
+Description correction: source manifest **1.0.21** adds Markdown links for account
+creation, desktop setup, help and contact email. The existing 1.0.20 ZIP predates
+this fix. See [description formatting and Partner Center HTML](docs/store-submission.md#description-hyperlinks-2026-11-05).
+Domain correction: production package **1.0.20** restricts `validDomains`
+to `teams.signaltuner.com`. The historical `appPackage/build/SignalTuner-production-1.0.20.zip`
+was generated and locally validated on 2026-11-05 at the
+user's request. No upload or submission was performed.
+See [domain correction and portal steps](docs/store-submission.md#valid-domain-correction-2026-11-05).
+Naming correction: production package **1.0.19** uses **SignalTuner** for both short
+and full names. That package records the earlier naming-only fix and is now
+superseded by the source domain correction above.
+See [Partner Center naming steps](docs/store-submission.md#partner-center-changes-to-make-manually)
+for the reserved name, alias and language listings. The new package was generated
+and locally validated on 2026-11-05 at the user's request; it has not been uploaded.
 The [mobile commerce policy](docs/teams-mobile-commerce.md) hides direct and indirect
 purchase routes using TeamsJS host context, retains report allowance and entitled
 analysis, and discloses desktop/web external navigation and payment flow.

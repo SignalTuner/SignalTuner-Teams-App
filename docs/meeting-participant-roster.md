@@ -109,7 +109,9 @@ permissions and valid domains are unchanged. The earlier frontend SSO pause
 remains in place. No backend invitation code or bot identity was changed.
 
 Users initiate invitations through the React tab and Adaptive Card dialog, not
-by messaging the bot. No conversational welcome or Help command is added.
+by messaging the bot. A proactive installation welcome is now implemented by the
+backend (see `signaltuner-back/docs/teams-bot-welcome.md`); no conversational
+Help command is added.
 The existing `dialog.adaptiveCard.bot.open` retains `completionBotId`; Load
 participants, selection/paging and Send invitation retain their existing
 `Action.Submit` and adapter-authenticated `task/submit` path.

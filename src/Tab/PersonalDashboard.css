@@ -32,6 +32,29 @@
 .personalDashboard .textButton { font: inherit; color: var(--ink); background: transparent; border: 0; padding: 8px 0; text-decoration: underline; cursor: pointer; }
 .personalDashboard .textButton:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (max-width: 600px) {
+  .personalDashboard .personalAnalysisActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+  .personalDashboard .personalAnalysisActions > button,
+  .personalDashboard .personalAnalysisActions > .remoteAnalysisAction {
+    width: 100%;
+    min-width: 0;
+  }
+  .personalDashboard .personalAnalysisActions > button,
+  .personalDashboard .personalAnalysisActions > .remoteAnalysisAction > button {
+    min-height: 44px;
+    height: 100%;
+    white-space: normal;
+  }
+  .personalDashboard .personalAnalysisActions > p {
+    grid-column: 1 / -1;
+    max-width: none;
+    text-align: center;
+  }
   .personalMeetingModalHeader, .personalMeetingModalBody { padding: 16px; }
   .personalPanel { padding: 16px; }
   .personalAccount { grid-template-columns: 1fr; }

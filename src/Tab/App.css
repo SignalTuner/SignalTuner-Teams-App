@@ -1088,7 +1088,54 @@ a {
   gap: 10px;
 }
 
-.clientDownloadButton,
+.clientDownloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Match the website Downloads page while fitting the Teams activation panel. */
+.clientDownloadButton {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.clientPlatformIcon {
+  display: inline-flex;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+}
+
+.clientPlatformIconMac {
+  width: 1.3em;
+  height: 1.3em;
+}
+
+.clientPlatformIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .clientActionButton {
   width: 100%;
   min-height: 46px;
@@ -1098,9 +1145,14 @@ a {
 }
 
 .clientDownloadButton:hover {
-  border-color: color-mix(in srgb, var(--blue) 78%, #FFFFFF);
-  background: color-mix(in srgb, var(--blue) 82%, #FFFFFF);
-  box-shadow: 0 5px 14px rgba(43, 108, 176, 0.24);
+  background: #60a5fa;
+  color: #172033;
+}
+
+:root[data-teams-theme="contrast"] .clientDownloadButton {
+  background: var(--panel);
+  color: var(--ink);
+  outline: 1px solid currentColor;
 }
 
 .clientActionButton:hover:not(:disabled) {
@@ -1125,10 +1177,6 @@ a {
   width: 20px;
   height: 20px;
   object-fit: contain;
-}
-
-.clientDownloadButton .actionIconImage {
-  filter: brightness(0) invert(1);
 }
 
 .clientTertiaryButton {
@@ -3047,17 +3095,49 @@ input:read-only {
   }
 
   .participantMetrics {
-    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
   }
 
   .participantMetrics > div::before {
-    left: -10px;
+    content: none;
+  }
+
+  /* Keep the score beside all three statuses in personal and meeting cards. */
+  .participantMetrics > div:first-child {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    grid-template-rows: auto auto;
+    align-content: center;
+  }
+
+  .participantMetrics > div:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: -10px;
+    border-right: 1px solid var(--line);
+  }
+
+  .participantMetrics > div:not(:first-child) {
+    grid-column: 2;
+  }
+
+  .participantMetrics > div:not(:first-child) dt {
+    margin-bottom: 3px;
+    font-size: 13px;
+  }
+
+  .participantMetrics > div:not(:first-child) dd {
+    font-size: 15px;
   }
 
   .participantActions {
     grid-column: 1;
     grid-row: auto;
-    justify-self: end;
+    justify-self: center;
+    align-items: center;
     width: min(100%, 240px);
   }
 
