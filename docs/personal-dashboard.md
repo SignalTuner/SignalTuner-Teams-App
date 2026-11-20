@@ -1,5 +1,179 @@
 # Teams personal dashboard
 
+## Meeting setup spacing and welcome card (2026-11-20)
+
+The `/tabs/config` confirmation content uses the available iframe height, with
+space between the three feature rows and the requirements/privacy footer near
+the bottom. Short windows and enlarged text can scroll without clipping content.
+The native Teams dialog header, Save button and posting checkbox are host-owned.
+
+The associated chat welcome card is built in the backend, not this frontend.
+It now has three separated sections: welcome/description, Get started, and
+Before you begin with five stacked icon-led link buttons. See
+`signaltuner-back/docs/teams-bot-welcome.md` for card styling and release details.
+
+Deployment impact
+- Changed projects: Microsoft Teams frontend and SignalTuner backend.
+- Dependent projects: Teams renders the backend's card; no other client release.
+- Database/configuration prerequisites: none; no schema, Azure setting, manifest,
+  permission, API, URL or dependency change.
+- Backward compatibility: presentation only; existing clients and cards remain
+  compatible. Previously posted welcome messages are not rewritten.
+- Required deployment order: either order; both must be deployed to show both
+  improvements. Frontend goes to DreamHost; backend to the existing
+  `signaltuner-back` App Service. No Teams package update is needed.
+- Post-deployment verification: open Add to a meeting and check the setup iframe
+  at normal/narrow sizes and both themes. In a fresh authorized bot installation,
+  check the three welcome sections and all five actions in desktop/mobile Teams.
+- Rollback considerations: restore the previous frontend/backend independently;
+  retain existing welcome delivery receipts and destinations for posted cards.
+- Projects still requiring deployment: none for this update. At the user's
+  explicit request, the frontend was deployed as DreamHost release
+  `20261120T183420Z` and the backend as App Service deployment
+  `6677a06e65ce4e32b0a06c980ed882d1`. No real chat message was sent during
+  validation. Native Teams card rendering still needs a fresh-install check.
+
+Validation: production DreamHost build, TypeScript, six hosting checks and three
+compiled-site browser tests passed. Local browser layout checks passed at
+495x372, 520x500, 360x600 and 320x280 in light, dark and contrast themes; the
+smallest window scrolls vertically. Live Teams host rendering remains to verify.
+
+## Native meeting installation (2026-11-20)
+
+The standalone personal dashboard now has **Add to a meeting** beside **Your
+Meetings**, including when history is collapsed or empty. It opens Teams' native
+SignalTuner installation/setup dialog so the user can choose the meeting scope,
+select a meeting and confirm setup. The existing meeting configuration page and
+manifest `groupChat` meeting contexts are retained.
+
+After the shared Teams initialization, the action uses the installed
+`context.app.appId.toString()` with
+`appInstallDialog.openAppInstallDialog({ appId })`. It does not substitute the
+bot/Entra application ID or a production ID in local builds. If the capability
+is unavailable (including explicit unsupported-platform/context errors), it
+uses `app.openLink` with `https://teams.microsoft.com/l/app/<installed app ID>`
+and the current tenant when valid. Non-Teams hosts, failed context and missing
+or invalid IDs retain a disabled action with instructions. Mobile Teams uses
+the same native capability check; this action is independent of commerce links.
+
+The SDK resolves on dispatch on some hosts; resolving is not proof of installation.
+The UI therefore gives setup guidance without claiming success, adding a local
+meeting, joining through the backend, reading calendars or sending invitations.
+Duplicate in-flight opens are suppressed, reported cancellation is quiet, and
+other errors receive safe retry/manual-setup guidance. If the picker omits an
+upcoming meeting, the guidance directs users to the meeting's details in Teams
+Calendar and its Apps control. Teams continues to enforce meeting roles, app
+availability, organizational policies and consent.
+
+References: [Teams native installation API](https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/build-and-test/deep-link-application#deep-link-to-open-an-app-install-dialog),
+[installation scopes and upcoming-meeting limitation](https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/deploy-and-publish/add-default-install-scope).
+
+Only the Teams frontend changes. No new API, backend implementation, database,
+calendar/Graph permission, SSO setting, app ID, Azure setting, dependency or Teams
+manifest/package change is required. The existing meeting history remains
+previously joined SignalTuner meetings, not the user's calendar.
+
+Validation: TypeScript and the production DreamHost build passed. Eight synthetic
+browser scenarios passed for native dispatch, installed app/tenant targeting,
+capability fallback, duplicate suppression, cancellation, safe errors, unavailable
+context, mobile capability use and narrow/wide layout. Light/dark previews at
+390px and 1100px were visually reviewed. Six hosting checks and three compiled-site
+browser scenarios also passed. No real meeting app installation or invitation
+was performed.
+
+At the user's explicit request, this feature was deployed through the existing
+DreamHost workflow as release `20261120T064444Z` to `https://teams.signaltuner.com`.
+All 11 remote files and ten public build files matched; nine routes, framing/cache
+headers, asset content types, missing/private-file rejection and previous-asset
+availability passed. Verified rollback files are retained outside the web root
+under `.signaltuner-releases/teams/20261120T064444Z/previous`. See
+`dreamhost-hosting.md` for the release record.
+
+Verify the native picker and actual meeting tab configuration in the intended
+Teams tenant. Returning from the picker alone is insufficient evidence. Rollback
+restores the previous frontend; meetings already configured by users remain
+installed. No cross-project deployment order or follow-up is required.
+
+## Self-analysis modal presentation (2026-11-20)
+
+The self-analysis dialog has three separated sections: the analysis description,
+desktop launch/download instructions, and activation. The description shows the
+existing analysis artwork, a right arrow, and a report page; the analysis/report
+icons are blue, and the arrow is black in light mode and white in dark mode.
+Launch uses the supplied rounded external-launch design. Download buttons reuse
+the website's Windows/Apple artwork, with one external-browser disclosure above
+the buttons. Activation reuses the website Downloads page's blue key icon and
+shows a bordered `******` placeholder until the generated code replaces it.
+The copy action and expiry feedback remain available. The boxed presentation is
+opt-in, preserving the existing onboarding activation layout.
+
+The three-second desktop/telemetry checks and automatic return to Request
+analysis are unchanged. No new dependency, backend, database, configuration,
+authentication or credit contract is involved. Font Awesome key attribution is
+retained in the SVG source. Verification for this presentation update passed:
+TypeScript, production DreamHost build, 26 related unit checks, six hosting
+checks, seven targeted synthetic browser scenarios and three compiled-site
+browser scenarios. Light/dark previews at 390px and 1100px were reviewed for
+placeholder/generated states, icon colors, scrolling and horizontal overflow.
+
+Deployed at the user's request as release `20261120T062209Z` to
+`https://teams.signaltuner.com`. All 11 remote files and ten public files matched
+the build; nine routes and their framing/cache headers passed. Previous assets
+remain available, with verified rollback files outside the web root under
+`.signaltuner-releases/teams/20261120T062209Z/previous`. See
+`dreamhost-hosting.md` for verification and rollback details. Native Teams and
+real desktop end-to-end checks remain manual; no production activation or
+credit-consuming analysis was performed.
+
+## Desktop setup in self-analysis dialogs (2026-11-20)
+
+The personal Analysis + Report dialog and individual self-analysis dialogs in
+current/historical meetings show desktop setup while the desktop is unavailable
+or its telemetry is missing, offline or older than two minutes. Setup reuses the
+existing launch page, Windows/macOS installer destinations and short-lived
+activation-code component. Code generation remains an explicit user action;
+expiration, copying and single-use behavior are unchanged. Other participants'
+dialogs never expose the signed-in account's activation code.
+
+While the self-analysis dialog is open, existing authenticated `current-device`
+and `User/signal/current` reads run every three seconds, pause when hidden and
+refresh on return. An available desktop plus a fresh, timestamped signal replaces
+setup with Request analysis in the same modal. Disconnection restores setup.
+Closing the modal aborts reads and stops its timers. Uncertain submissions remain
+recoverable with the original request ID even if the desktop disconnects.
+Connecting does not automatically request an analysis or spend credits.
+
+Launch/download navigation shares `ClientPrompt`'s Teams host policy and TeamsJS
+openLink behavior, including its explicit browser fallback. Restricted or unknown
+hosts retain activation and connection checks without external launch/download
+links. No API, consent, billing, device-identity or authentication contract changes.
+
+Validation: TypeScript, frontend and DreamHost builds, 52 related unit/hosting
+checks and all 54 synthetic browser scenarios passed. Light/dark setup previews
+at 390px and 1100px were visually reviewed. Coverage includes stale/missing
+telemetry, reconnection, request recovery, self-only activation and restricted hosts.
+
+Release only the Teams static frontend using the existing DreamHost build/upload
+workflow. No backend, WPF, website, SEO or Zoom release, SQL migration, Azure
+setting, Teams manifest or package change is needed. Rollback is a frontend
+revert. Validate hosted Teams launch/download, activation and automatic return to
+Request analysis after upload; local mocked browser checks do not establish
+production verification.
+
+At the user's explicit request, the Teams static frontend was rebuilt and
+deployed to `https://teams.signaltuner.com` on 2026-11-20, release
+`20261120T055552Z`. All 11 uploaded file checksums and 10 public file checksums
+matched. Nine public routes, framing/revalidation headers, JS/CSS content types
+and immutable caching, missing/private-file rejection, HTTP-to-HTTPS redirects
+and the backend Teams-origin CORS preflight passed. Three compiled-site browser
+scenarios and the six hosting/six service-status checks passed before upload.
+The prior HTML, Apache configuration and all 34 existing assets were backed up
+outside the public web directory under the website user's
+`.signaltuner-releases/teams/20261120T055552Z/previous`; prior hashed assets remain
+served for existing tabs. No backend, database, Azure, manifest or Teams-package
+change was made. Authenticated Teams activation/telemetry verification remains a
+manual follow-up; no real account activation, analysis or credit use was performed.
+
 ## Mobile connectivity summary (2026-11-06)
 
 At viewport widths up to 600px, the shared connectivity summary keeps Signal

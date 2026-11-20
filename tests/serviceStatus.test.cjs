@@ -31,7 +31,9 @@ test("preview keeps every unresolved incident and the five newest resolved repor
   assert.ok(markup.includes('teamsServiceCount teamsServiceStatus teamsServiceStatus--outage'));
   assert.ok(markup.includes('data-incident-state="unknown"'));
   assert.ok(markup.includes("Updated"));
-  assert.ok(markup.includes("Synthetic description."));
+  assert.ok(!markup.includes("Synthetic description."), "incident descriptions start collapsed");
+  assert.equal((markup.match(/class="teamsServiceIncidentSummary"/g) || []).length, preview.length);
+  assert.equal((markup.match(/aria-expanded="false"/g) || []).length, preview.length + 1);
 });
 
 test("loading and failure stay unavailable instead of claiming operational status or zero incidents", () => {

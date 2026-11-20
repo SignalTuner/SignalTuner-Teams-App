@@ -3,6 +3,7 @@ import DashboardHeader, { getInitials } from "./DashboardHeader";
 import SettingsPage from "./SettingsPage";
 import SupportPage from "./SupportPage";
 import AppearanceSelector from "./AppearanceSelector";
+import AddToMeetingButton from "./AddToMeetingButton";
 import ClientPrompt from "./ClientPrompt";
 import MeetingServiceStatus from "./MeetingServiceStatus";
 import ConnectivitySummary from "./ConnectivitySummary";
@@ -75,12 +76,15 @@ export default function PersonalDashboard(props: Props) {
         </section>
         <MeetingServiceStatus apiBaseUrl={apiBaseUrl} token={token} />
         <section className="panel personalPanel" aria-labelledby="personal-meetings-title">
+          <div className="personalMeetingsHeader">
           <h2 id="personal-meetings-title" className="personalSectionHeading">
             <button className="personalSectionToggle" type="button" aria-expanded={meetingsExpanded} aria-controls="personal-meetings-content"
               onClick={() => setMeetingsExpanded(value => !value)}>
               <span>Your Meetings</span><span className="teamsServiceDisclosure" aria-hidden="true" />
             </button>
           </h2>
+          <AddToMeetingButton />
+          </div>
           <div id="personal-meetings-content" hidden={!meetingsExpanded}>
           <div className="personalSectionToolbar"><button className="secondaryButton" onClick={meetings.refresh}>Refresh meetings</button></div>
           <p>Previously joined SignalTuner meetings. These records do not indicate whether a Teams call is active.</p>
@@ -110,14 +114,14 @@ export default function PersonalDashboard(props: Props) {
             <div><dt>Desktop client</dt><dd>{account.error ? "Unavailable" : connected ? "Connected" : "Disconnected"}</dd></div></dl>
           </div>
         </section>
-      {selectedMeeting && <HistoricalMeeting key={selectedMeeting} api={api} id={selectedMeeting} apiBaseUrl={apiBaseUrl} token={token} onClose={() => setSelectedMeeting(null)} />}
+      {selectedMeeting && <HistoricalMeeting key={selectedMeeting} currentUserId={user.userId} api={api} id={selectedMeeting} apiBaseUrl={apiBaseUrl} token={token} onClose={() => setSelectedMeeting(null)} />}
     </>}
   </main>;
 }
 function stringMetric(data: TelemetryRecord | null, key: string) { return typeof data?.[key] === "string" ? data[key] as string : null; }
 
-function HistoricalMeeting({ api, id, apiBaseUrl, token, onClose }: {
-  api: PersonalApi; id: string; apiBaseUrl: string; token: string; onClose: () => void;
+function HistoricalMeeting({ api, currentUserId, id, apiBaseUrl, token, onClose }: {
+  api: PersonalApi; currentUserId: number; id: string; apiBaseUrl: string; token: string; onClose: () => void;
 }) {
   const detail = usePersonalResource<MeetingDetail>(api, `meetings/${encodeURIComponent(id)}`);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -153,7 +157,7 @@ function HistoricalMeeting({ api, id, apiBaseUrl, token, onClose }: {
               <ConnectivitySummary name={person.name} score={signal?.signalScore ?? null} overallStatus={signal?.signalOverallStatus ?? null} hasData={hasData}
                 workspaceStatus={signal?.signalWifiStatus ?? null} networkStatus={signal?.signalBandwidthStatus ?? null} deviceStatus={signal?.signalSystemStatus ?? null} />
               <div className="participantActions">{action}</div></div>{panel}</li>;
-          return detail.data!.canAnalyze ? <RemoteAnalysisButton key={person.participantId} apiBaseUrl={apiBaseUrl} token={token} targetUserId={person.userId} targetName={person.name}
+          return detail.data!.canAnalyze ? <RemoteAnalysisButton key={person.participantId} apiBaseUrl={apiBaseUrl} token={token} targetUserId={person.userId} isSelf={person.userId === currentUserId} targetName={person.name}
             meetingSessionId={detail.data!.meeting.meetingSessionId} expanded={expanded === person.userId}
             backgroundRequest={detail.data!.requests?.find(request => request.targetUserId === person.userId)}
             onToggle={() => setExpanded(value => value === person.userId ? null : person.userId)} onExpand={() => setExpanded(person.userId)}

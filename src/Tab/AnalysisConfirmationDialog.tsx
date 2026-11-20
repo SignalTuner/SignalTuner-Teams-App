@@ -1,10 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import "./RemoteAnalysisButton.css";
 import "./MeetingAnalysisButton.css";
+import { AnalysisOverviewIcons } from "./DesktopSetupIcons";
+import "./SelfAnalysisDesktopSetup.css";
 
-export default function AnalysisConfirmationDialog({ open, name, credits, loadingCredits = false, busy, error, onClose, children }: {
+export default function AnalysisConfirmationDialog({ open, name, credits, loadingCredits = false, busy, error, onClose, children, selfAnalysis = false }: {
   open: boolean; name: string; credits: number | null; loadingCredits?: boolean;
-  busy: boolean; error: string; onClose: () => void; children: ReactNode;
+  busy: boolean; error: string; onClose: () => void; children: ReactNode; selfAnalysis?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (open && !dialog.current?.open) dialog.current?.showModal(); }, [open]);
@@ -12,11 +14,14 @@ export default function AnalysisConfirmationDialog({ open, name, credits, loadin
   return <dialog ref={dialog} className="remoteAnalysisDialog meetingAnalysisDialog" aria-label={`Analyze ${name}`}
     onCancel={event => { if (busy) event.preventDefault(); else onClose(); }} onClose={onClose}>
     <header><h2>Analyze {name}</h2><button type="button" disabled={busy} aria-label="Close analysis request" onClick={onClose}>×</button></header>
-    <p>Connectivity Health Analysis runs for 5 minutes, starting when the user grants permission on the SignalTuner desktop client.</p>
-    <p>Upon completion, a Connectivity Health Report will be emailed to you and the analyzed user.</p>
-    <p>Each Connectivity Health Report requires 1 credit.</p>
-    <p>Analysis disrupted by permission denial, cancellation, or disconnection will not deduct credits.</p>
-    <p className="meetingAnalysisAvailable" aria-live="polite" aria-atomic="true">Available credits: <strong>{loadingCredits ? "Loading..." : credits ?? "Unavailable"}</strong></p>
+    <section className="analysisDescription" aria-label="About the analysis">
+      {selfAnalysis && <AnalysisOverviewIcons />}
+      <p>Connectivity Health Analysis runs for 5 minutes, starting when the user grants permission on the SignalTuner desktop client.</p>
+      <p>Upon completion, a Connectivity Health Report will be emailed to you and the analyzed user.</p>
+      <p>Each Connectivity Health Report requires 1 credit.</p>
+      <p>Analysis disrupted by permission denial, cancellation, or disconnection will not deduct credits.</p>
+      <p className="meetingAnalysisAvailable" aria-live="polite" aria-atomic="true">Available credits: <strong>{loadingCredits ? "Loading..." : credits ?? "Unavailable"}</strong></p>
+    </section>
     {error && <p role="alert" className="remoteAnalysisError">{error}</p>}
     {busy && <p role="status">Updating analysis...</p>}
     {children}

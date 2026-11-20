@@ -24,9 +24,12 @@ The welcome/guide release remains separate: deploy the website guide and downloa
 rewrite first, the backend welcome handler second, and the hosted Teams frontend
 support links third. Verify **Azure portal > App Services > signaltuner-back >
 Settings > Environment variables > App settings** in production:
-`TeamsInvitations__TeamsAppId` must match this package's top-level app ID,
-`12a01999-ead3-4e8a-9fca-0263cc470316`. If stale, update it, Apply/Save and let the
-App Service restart before testing the welcome links. No setting was changed here.
+`TeamsInvitations__TeamsAppId` must match the installed app's navigation ID for
+its distribution channel. The manifest remains
+`12a01999-ead3-4e8a-9fca-0263cc470316`, while the production catalog installation
+observed on 2026-11-20 uses `b429569b-1074-48dc-b25c-a556e9f63631`. If stale, update
+the setting, Apply/Save and let the App Service restart before testing the welcome
+links. See the backend's `docs/teams-bot-welcome.md` for that configuration release.
 See [welcome rollout and checks](bot-welcome-and-setup-guide.md). No database
 migration, new permission or identity change is required. Existing clients remain
 compatible; functionality may be incomplete until the separate deployments finish.
@@ -445,21 +448,24 @@ become this app. Do not change the bot/Entra registration ID to the Teams app ID
 
 ### Required backend configuration alignment
 
-After the new app is available in the intended tenant, update the existing
-non-secret **`TeamsInvitations__TeamsAppId`** setting to
-**`12a01999-ead3-4e8a-9fca-0263cc470316`** at **Azure portal > App Services >
+After the new app is available in the intended tenant, verify its navigation ID
+from Teams' **Copy link to tab** or the installed catalog entry. Use the manifest
+ID for directly uploaded custom apps, org catalog ID for org-catalog apps, and
+Store ID for Store apps. The production catalog installation observed on
+2026-11-20 uses **`b429569b-1074-48dc-b25c-a556e9f63631`**. Set the existing
+non-secret **`TeamsInvitations__TeamsAppId`** to that value at **Azure portal > App Services >
 signaltuner-back (resource group SignalTuner, production, not signaltuner-back-stage)
 > Settings > Environment variables > App settings**. Apply the change and allow
 the App Service restart. Verify Load Participants, selection, Send Invitation,
 meeting-chat delivery, and the message's Open SignalTuner button in a real meeting.
 This is an existing configuration change, not a backend code release or SQL migration.
-The old identity's invitation links and the new package will be inconsistent until
-the setting is aligned. Reverting that setting restores links to the old identity;
+Existing messages retain the navigation identity used when they were sent.
+Reverting this setting restores the prior target for future messages;
 retain the existing bot identity and authorization checks during rollback.
 
-No Azure setting was changed in this task. The latest recorded backend inspection
-still named the local app ID; current live settings were not independently inspected.
-The backend invitation document records this required production value as well.
+The 2026-11-20 configuration release applied the catalog ID and verified the
+backend restart and health checks; see the backend welcome and invitation
+documents. Future Store releases must verify the navigation identity again.
 
 Before submitting, run Developer Portal validation against this exact ZIP and
 complete the open cross-tenant, mobile, bot-dialog/delivery and reviewer-evidence
@@ -580,8 +586,9 @@ The static build uses the separate public
    `SignalTuner`, production, not `signaltuner-back-stage`) > Settings > Environment
    variables > App settings. Preserve `TeamsSso__TenantId` and `MicrosoftApp*`
    settings until the coordinated identity design is approved. For invitation
-   links, set/update `TeamsInvitations__TeamsAppId` to the final production manifest
-   **app ID**, not the bot ID, after confirming that app's installation. Apply and
+   links, set/update `TeamsInvitations__TeamsAppId` to the installed production
+   **navigation app ID** (manifest ID for direct custom uploads, catalog ID for
+   org-catalog apps, Store ID for Store apps), not the bot ID. Apply and
    restart as prompted, after compatible backend code is on every instance.
    Verify the Open SignalTuner link in the intended meeting. Backend CORS already
    includes `https://teams.signaltuner.com`; a different host requires a reviewed

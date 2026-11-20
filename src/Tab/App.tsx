@@ -2464,13 +2464,13 @@ function Dashboard({
                 <div className="sidePanelSignalScore"><span>Signal Score</span><CompactSignalScoreDisplay
                   score={participant.signalScore} overallStatus={participant.overallStatus} hasData={hasData} /></div>
                 <RemoteAnalysisButton apiBaseUrl={apiBaseUrl} token={sessionToken} targetUserId={participant.userId}
-                  targetName={getParticipantName(participant)} meetingSessionId={dashboard.meetingSessionId} />
+                  isSelf={participant.userId === user.userId} targetName={getParticipantName(participant)} meetingSessionId={dashboard.meetingSessionId} />
               </div>
             </li>;
 
             return (
               <RemoteAnalysisButton key={`${user.userId}:${dashboard.meetingSessionId}:${participant.userId}`} apiBaseUrl={apiBaseUrl} token={sessionToken}
-                targetUserId={participant.userId} targetName={getParticipantName(participant)}
+                targetUserId={participant.userId} isSelf={participant.userId === user.userId} targetName={getParticipantName(participant)}
                 backgroundRequest={meetingAnalysisRequests[`${user.userId}:${dashboard.meetingSessionId}:${participant.userId}`]}
                 meetingSessionId={dashboard.meetingSessionId}
                 expanded={isExpanded} onToggle={() => toggleParticipantTelemetry(participant.userId)}

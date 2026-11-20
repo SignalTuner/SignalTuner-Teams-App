@@ -4,7 +4,7 @@ export const ActivationContext = React.createContext({ apiBaseUrl: "", token: ""
 
 type CodeState = { activationCode: string | null; expiresAtUtc: string | null; serverNowUtc?: string; expiresAtLocal?: number; sessionToken?: string };
 
-export default function TemporaryActivationCode({ onCopied }: { onCopied?: () => void }) {
+export default function TemporaryActivationCode({ onCopied, boxed = false }: { onCopied?: () => void; boxed?: boolean }) {
   const { apiBaseUrl, token } = React.useContext(ActivationContext);
   const [code, setCode] = React.useState<CodeState | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -86,14 +86,21 @@ export default function TemporaryActivationCode({ onCopied }: { onCopied?: () =>
     } catch { setError("Could not copy. Select and copy the code below."); }
   };
 
-  return <div className="temporaryActivationCode">
-    {activeCode ? <>
+  return <div className={`temporaryActivationCode${boxed ? " temporaryActivationCode--boxed" : ""}`}>
+    {boxed ? <div className="temporaryActivationCodeControls">
+      <div className="temporaryActivationCodeField" role="group" aria-label={activeCode ? "Activation code" : "Activation code: not generated"} aria-live="polite" aria-atomic="true">
+        {activeCode ? <strong className="temporaryActivationCodeValue">{activeCode}</strong>
+          : <span className="temporaryActivationCodePlaceholder" aria-hidden="true">******</span>}
+      </div>
+      {activeCode ? <button type="button" onClick={() => void copy()}>{copied ? "Copied" : "Copy code"}</button>
+        : <button type="button" disabled={busy || !token} onClick={() => void generate()}>{busy ? "Generating…" : "Generate activation code"}</button>}
+    </div> : activeCode ? <>
       <strong className="temporaryActivationCodeValue">{activeCode}</strong>
       <button type="button" onClick={() => void copy()}>{copied ? "Copied" : "Copy code"}</button>
-      <p>Valid for 5 minutes. Single use. {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")} remaining.</p>
     </> : <button type="button" disabled={busy || !token} onClick={() => void generate()}>
       {busy ? "Generating…" : "Generate activation code"}
     </button>}
+    {activeCode && <p>Valid for 5 minutes. Single use. {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")} remaining.</p>}
     <p>Enter the code in the latest SignalTuner desktop client.</p>
     {error && <p role="alert">{error}</p>}
   </div>;

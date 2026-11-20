@@ -251,7 +251,9 @@ Selections persist across pages. The roster includes chat members who might not
 currently be in the call; channel meetings are not supported by this flow.
 
 Deploy the backend bot handler before the Teams tab. Configure the optional
-backend `TeamsInvitations__TeamsAppId` with the installed manifest app ID to add an
+backend `TeamsInvitations__TeamsAppId` with the installed navigation app ID
+(manifest ID for direct custom uploads, org catalog ID for org-catalog apps,
+Store ID for Store apps) to add an
 Open SignalTuner link; without it, the invitation contains opening instructions.
 Run `npm run test:meeting-invitations`, `npm run build`, and
 `npx tsc -p tsconfig.app.json --noEmit`. Real Teams bot installation, mentions,

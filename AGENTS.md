@@ -12,16 +12,17 @@ The current project map is:
 | Component | Current local path | Product responsibility | Primary technology / source of truth |
 |---|---|---|---|
 | SignalTuner WPF local client | `C:\Users\georg\source\repos\SignalTuner` | Windows endpoint telemetry collection, local diagnostics, activation, and desktop behavior | WPF on .NET Framework 4.7.2; this repository owns Windows-client behavior |
-| SignalTuner backend | `C:\Users\georg\source\repos\signaltuner-back` | APIs, authentication enforcement, database access, server-side business rules, background services, and SignalR | .NET 6 Web API with MySQL; this repository owns API and database implementation |
+| SignalTuner backend | `C:\Users\georg\source\repos\signaltuner-back` | APIs, authentication enforcement, database access, server-side business rules, background services, and SignalR | .NET 10 Web API with MySQL; this repository owns API and database implementation |
 | SignalTuner website frontend | `C:\Users\georg\source\repos\signaltuner-front` | Public website and browser dashboard | React SPA; this repository owns browser-specific presentation and interaction |
 | SignalTuner service-status SEO frontend | `C:\Users\georg\source\repos\is-service-down` | SEO-friendly public service-status/front-door experience that should share style, messaging patterns, and browser functionality with the website where applicable | React SPA / Create React App; this repository owns SEO-oriented public status pages and domain-specific frontend behavior |
 | SignalTuner Microsoft Teams app | `C:\Users\georg\source\repos\SignalTuner Teams App` | Teams tab/meeting experience, Teams context, Teams SSO initiation, manifests, and Teams-specific UI | React/Vite static frontend on DreamHost Apache; Microsoft 365/Teams Agents Toolkit and Node.js for local debugging |
+| SignalTuner Zoom app | `C:\Users\georg\source\repos\SignalTuner Zoom App` | Zoom Apps SDK, meeting/personal experience, native invitations and Zoom-specific UI | React/TypeScript/Vite frontend; SignalTuner backend owns Zoom verification and installation OAuth |
 
 The project map may expand. When another SignalTuner client, service, website, integration, deployment project, or shared package is discovered, evaluate whether it belongs in this map and tell the user when the shared documentation should be updated.
 
 ### Local path maintenance
 
-The paths above are operational development metadata and must remain synchronized across all five `AGENTS.md` files and `SignalTuner.code-workspace`.
+The paths above are operational development metadata and must remain synchronized across all six `AGENTS.md` files and `SignalTuner.code-workspace`.
 
 When any SignalTuner project is moved, renamed, cloned to a new canonical location, or otherwise changes its local directory:
 
@@ -81,6 +82,7 @@ Treat the following as ecosystem contracts rather than local implementation deta
 - Database tables, columns, keys, constraints, indexes, relationships, defaults, and status values.
 - Environment variables, configuration keys, feature flags, public URLs, callback URLs, origins, and local ports.
 - Teams manifests, app IDs, resource/application IDs, valid domains, content URLs, and permission declarations.
+- Zoom application IDs, encrypted contexts, Home URLs, OAuth callbacks, domain allow lists, SDK capabilities, and permission scopes.
 - Telemetry payloads, units, sampling intervals, thresholds, timestamps, and interpretation.
 - Error identifiers, retry behavior, idempotency rules, and user-visible failure semantics.
 - Billing, subscription, entitlement, plan, quantity, and credit semantics.
@@ -111,6 +113,7 @@ Use these ownership rules:
 | Browser-specific UI and routing | SignalTuner website frontend |
 | SEO-friendly public status/front-door pages and domain-specific public website variants | SignalTuner service-status SEO frontend, aligned with SignalTuner website frontend style and shared browser functionality |
 | Teams context, Teams manifests, Teams-specific UI, and Teams SSO initiation | SignalTuner Microsoft Teams app |
+| Zoom Apps context, native invitations, Home URL and Zoom-specific UI | SignalTuner Zoom app; backend owns context validation and installation OAuth |
 | Deployed secrets and credentials | Approved secret/configuration stores; never source files or `AGENTS.md` |
 | Exact build/test commands | The relevant repository's solution, project, and package manifests |
 | Production configuration | The relevant deployment platform and checked-in non-secret templates |
@@ -172,7 +175,7 @@ When a database change is requested:
     - Update `database/schema.sql` to the confirmed live structure.
     - Add an entry to `database/SCHEMA_CHANGELOG.md`.
     - Re-run relevant tests and schema checks.
-    - Update all five `AGENTS.md` files only when shared database instructions, paths, ownership, or conventions changed.
+    - Update all six `AGENTS.md` files only when shared database instructions, paths, ownership, or conventions changed.
 
 Never include production rows, personal data, credentials, hostnames, GTID state, or full data dumps in the repository. Do not commit the supplied source dump. Keep migration scripts and `schema.sql` structure-only.
 
@@ -214,7 +217,7 @@ SignalTuner components may be deployed or installed independently. Design shared
 - Prefer adding before removing.
 - Prefer optional fields with safe defaults over immediate renames/removals.
 - Keep old API routes or fields during a documented transition when released clients still depend on them.
-- Do not assume the WPF client, website, service-status SEO frontend, Teams app, and backend can be deployed simultaneously.
+- Do not assume the WPF client, website, service-status SEO frontend, Teams app, Zoom app, and backend can be deployed simultaneously.
 - Explicitly identify minimum compatible versions when compatibility changes.
 - For database migrations, distinguish expand, migrate/backfill, and contract/removal phases when appropriate.
 - Avoid destructive changes until all known consumers have migrated.
@@ -468,6 +471,56 @@ SSO changes, migration or Teams package. Missing/purged routing history needs a 
 authenticated bot activity (for example Invite > Load Participants). See the same
 backend document for bounded retries, privacy, validation and rollback.
 
+### Private administrative analytics (local implementation, 2026-11-10)
+
+The backend owns `GET /api/admin/analytics/overview`; only the website exposes
+`/admin/analytics`, with no public navigation or indexing. Access requires the
+configured immutable `AdminAnalytics:UserId`, an active matching designated account,
+and a server-validated website JWT. Analytics stays disabled until a non-legacy
+`WebsiteJwt:SigningKey` is configured. The optional secret override is shared by
+website/Teams SignalTuner JWT issuance and validation; absent configuration retains
+legacy non-admin behavior. Activating it invalidates old bearer tokens and requires
+an approved coordinated all-instance restart and fresh sign-in. Do not rotate it,
+restore the known legacy key, or deploy as an incidental task step. DS1 desktop
+credentials and Entra validation are unchanged. No schema change or new tracking is
+involved. Metrics explicitly identify incomplete retained-record coverage. See
+`signaltuner-back/docs/admin-analytics.md` for calculations, configuration, tests,
+Azure navigation, rollout and rollback. Implementation does not confirm deployment.
+
+### Zoom app integration (local implementation, 2026-11-10)
+
+The sixth project is `C:\Users\georg\source\repos\SignalTuner Zoom App`.
+It derives its UI from the Microsoft Teams app and uses the official Zoom Apps
+SDK. SignalTuner account sign-in remains separate from Zoom installation OAuth.
+The backend owns `POST /api/zoom/meetings/join`, authenticated encrypted Zoom
+context validation, and `/api/zoom/oauth/start` and `/callback` installation.
+Only explicit signed-in joins enroll accounts; SDK names/emails and Zoom roles
+never authorize account access or analyses. Existing WebMeetingSessions and
+WebMeetingParticipants (service ID 1) preserve analysis, billing, history and
+account-deletion rules. No migration or confirmed-live schema change is involved.
+See `signaltuner-back/docs/zoom-app.md` and the Zoom project's
+`docs/zoom-local-test.md` for settings, permissions, testing and release order.
+Deploy/configure all backend instances before the Zoom frontend; no existing
+client release is required. The integration is disabled by default. Keep
+ZoomApp:ClientSecret and the stable ZoomApp:MeetingKey server-side and preserve
+the latter during rollback. On 2026-11-11, at the user's explicit request, the
+agent deployed the Zoom/Swagger additions to the production signaltuner-back
+App Service and configured its six Zoom settings for the existing Development
+Zoom registration. Existing deployed authentication, analytics, configuration
+and dependencies were preserved and checked. The local Zoom frontend uses
+same-origin /api requests through the existing Vite HTTPS proxy to production;
+its tunnel remains the Home URL. Direct API requests failed in the Windows
+Zoom webview even after domain-list verification and reauthorization. The public
+ZOOM_OAUTH_ORIGIN config-checker override keeps installation/callback links on
+Azure; production authentication, CORS and callback settings remain unchanged.
+See the Zoom setup guide for the current configuration and Marketplace settings.
+The shared-backend restart impact was disclosed before deployment. No SQL,
+credential rotation, account creation, invitation, credit use or Marketplace
+publication was performed. The user confirmed that production account sign-in
+opens the local Zoom dashboard after the proxy correction. Meeting enrollment
+and analyses still need manual verification. Testing now uses real production
+history, credits, telemetry and email semantics.
+
 ## Confirmation gates
 
 Obtain explicit user approval before performing or finalizing any of the following:
@@ -529,7 +582,7 @@ Update documentation when changing:
 - Shared vendors, libraries, and operational providers.
 - Domain terminology.
 
-Shared changes must be reflected consistently in all five `AGENTS.md` files. Project-specific changes belong only in the affected repository's project section unless they alter an ecosystem rule.
+Shared changes must be reflected consistently in all six `AGENTS.md` files. Project-specific changes belong only in the affected repository's project section unless they alter an ecosystem rule.
 
 ## Agent completion report
 

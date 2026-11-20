@@ -10,7 +10,7 @@ const { renderToStaticMarkup } = require("react-dom/server");
 function load(name) {
   const filename = path.resolve(__dirname, "../src/Tab", name);
   const compiled = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   }).outputText;
   const loaded = new Module(filename, module);
   loaded.filename = filename;

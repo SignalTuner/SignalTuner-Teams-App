@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import SelfAnalysisDesktopSetup from "./SelfAnalysisDesktopSetup";
 import LiveAnalysisCharts from "./LiveAnalysisCharts";
 import AnalysisCountdown, { AnalysisCanceled } from "./AnalysisCountdown";
 import AnalysisSection from "./AnalysisSection";
@@ -130,6 +131,7 @@ export default function PersonalAnalysis({ api, userId, displayName, credits, lo
     finally { clearTimeout(timeout); controllers.current.delete(controller); mutating.current = false; if (mounted.current) { setBusy(false); onCreditsChanged(); } }
   }
   const blocked = busy || active;
+  const connectionError = "Connect your desktop client to start an analysis.";
   return <>
     <div className="participantRow">
       {children}
@@ -146,8 +148,10 @@ export default function PersonalAnalysis({ api, userId, displayName, credits, lo
       </div>
     </div>
     <AnalysisConfirmationDialog open={reportOpen} name={displayName || "you"} credits={credits} loadingCredits={loadingCredits}
-      busy={busy} error={error} onClose={() => setReportOpen(false)}>
-      <footer><button type="button" className="meetingAnalyzeButton" disabled={blocked} onClick={() => void submit("Report")}>Request analysis · 1 credit</button></footer>
+      busy={busy} error={error === connectionError ? "" : error} onClose={() => setReportOpen(false)} selfAnalysis>
+      <SelfAnalysisDesktopSetup api={api} userId={userId} recovering={pending?.mode === "Report"}>
+        <footer><button type="button" className="meetingAnalyzeButton" disabled={blocked} onClick={() => void submit("Report")}>Request analysis · 1 credit</button></footer>
+      </SelfAnalysisDesktopSetup>
     </AnalysisConfirmationDialog>
     <AnalysisSection title={`Analysis for ${displayName || "you"}`} expanded={expanded} onToggle={() => setExpanded(value => !value)}>
       {request && <p className={["Running", "Cancelled"].includes(request.state) ? "remoteAnalysisProgress" : "personalAnalysisStatus"} aria-live="polite">

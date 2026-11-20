@@ -5,6 +5,112 @@ Apache hosting. The subdomain already exists per the user. No live upload,
 DNS/hosting/Azure/Entra change, database operation or Teams package generation
 is part of this preparation.
 
+## Meeting confirmation spacing deployment (2026-11-20)
+
+At the user's explicit request, release `20261120T183420Z` deployed the taller,
+responsive meeting configuration layout. The already tested production build
+was revalidated, then uploaded using the approved recent DreamHost connection
+and pinned host key. The previous HTML, Apache configuration and all 40 assets
+were backed up and verified outside the served root under
+`.signaltuner-releases/teams/20261120T183420Z/previous`; the new build is archived
+beside it. Previous assets remain available; HTML was switched last atomically.
+
+All 11 remote files and ten public build-file checksums matched. Nine public
+routes, framing/cache headers, JS/CSS types and immutable caching, old assets,
+and private/missing-resource 404 checks passed. The live setup page also passed
+light/dark browser layout checks at 495x372, filling the iframe without clipping.
+For rollback restore this release's matching Apache configuration and HTML,
+with HTML last; retained assets support already-open clients.
+
+The accompanying welcome-card presentation was deployed to the production
+`signaltuner-back` App Service as `6677a06e65ce4e32b0a06c980ed882d1`; all 129
+backend files and hosted read/auth/CORS checks passed. See the backend's
+`docs/teams-bot-welcome.md` for its private rollback artifact and verification.
+No database, Azure setting, permission, manifest or Teams package change was
+required. Both projects are deployed; final native Teams welcome-card appearance
+needs a fresh authorized installation. Existing chat messages are not rewritten,
+and no real chat message or analysis was initiated during verification.
+
+## Native meeting setup deployment (2026-11-20)
+
+At the user's explicit request, release `20261120T064444Z` deployed the native
+**Add to a meeting** action beside **Your Meetings**. The previously tested
+production build was revalidated before upload. This is a Teams frontend-only
+release: no backend, database, Azure, permission, manifest or package change.
+
+The approved recent DreamHost SFTP connection and saved pinned host key were
+reused. Before publishing, the remote HTML was matched to the public site and
+the previous HTML, `.htaccess` and all 38 assets were backed up and verified
+outside the served root under the website user's
+`.signaltuner-releases/teams/20261120T064444Z/previous`. The new 11-file build was
+archived alongside it. Hashed assets were uploaded first, previous assets were
+retained, and the entry HTML was replaced last with an atomic rename.
+
+All 11 remote files and ten public build-file checksums matched. Nine public
+routes, framing/revalidation headers, JS/CSS content types and immutable caching,
+missing/private-resource 404 responses and previous-asset availability passed.
+The earlier implementation validation included TypeScript, the production build,
+eight native-flow browser scenarios, six hosting checks and three compiled-site
+browser scenarios. No credentials were added to source or logs.
+
+Native Teams meeting selection and completed tab installation still require
+verification in the intended tenant; no real meeting installation or invitation
+was performed. For rollback, restore the backup's matching `.htaccess` and HTML
+with HTML last. Existing user-installed meeting tabs remain installed. No other
+SignalTuner project release is required.
+
+## Self-analysis modal deployment (2026-11-20)
+
+At the user's explicit request, release `20261120T062209Z` deployed the three-section
+self-analysis modal, themed analysis/report icons, launch/platform icons, shared
+external-browser disclosure and boxed activation code. Only the Teams frontend
+changed for this update; API, database, Azure, manifest and package contracts are
+unchanged. The approved recent DreamHost connection and pinned saved host key
+were reused. No credentials were written to the repository.
+
+The previous HTML, `.htaccess` and 36 assets were backed up and verified outside
+the served root under the website user's
+`.signaltuner-releases/teams/20261120T062209Z/previous`; the new build is archived
+beside it. Hashed assets were uploaded first, all prior assets were retained, and
+HTML was switched last by atomic rename. All 11 remote build files and all ten
+public build files matched the local bytes. Nine public routes, framing/cache
+headers, JS/CSS content types, old-asset availability and missing/private-resource
+404 checks passed. TypeScript, the production build, 32 unit/hosting checks and
+ten targeted/compiled browser scenarios passed before upload. Light/dark previews
+were reviewed at 390px and 1100px with synthetic activation data.
+
+No production activation, analysis or credit use was performed. Native Teams
+launch and real desktop activation/telemetry remain end-to-end manual verification.
+For rollback, restore the backup's matching `.htaccess` and HTML, with HTML last;
+the previous assets remain served. No other project deployment is required.
+
+## Earlier production frontend deployment (2026-11-20)
+
+At the user's explicit request, release `20261120T055552Z` was built from the
+current Teams working tree and uploaded to the existing DreamHost site. The
+existing saved SFTP host key was pinned; after the older named profile failed
+authentication, the user explicitly approved the recent saved DreamHost profile.
+No credentials were added to the repository. The remote index was matched
+byte-for-byte to the public frontend before upload.
+
+The previous HTML, `.htaccess` and all 34 assets were verified in a private backup
+outside the served root, under the website user's
+`.signaltuner-releases/teams/20261120T055552Z/previous`. The new 11-file build was
+archived beside it. Hashed assets were uploaded first, with all old assets retained;
+the entry HTML was replaced last using an atomic SFTP rename. All remote build
+checksums and all ten public build-file checksums matched afterward. Public route,
+framing, cache, content-type, missing/private resource, HTTPS redirect and backend
+origin-preflight checks passed. Six hosting checks, six service-status checks and
+three compiled-site browser scenarios passed before upload.
+
+This deploy includes self-analysis desktop setup and the pending Teams service
+incident disclosures. No DNS, Azure/Entra, backend, database, manifest or Teams
+package operation was performed. Authenticated/native Teams activation, telemetry
+and service-card checks remain manual follow-up. For rollback, restore this
+backup's matching `.htaccess` and HTML with HTML last; its assets remain served.
+The preparation and rename history below records earlier work, not current
+deployment status.
+
 ## Architecture and preserved behavior
 
 DreamHost serves only the React app, assets and Apache configuration. Node.js is

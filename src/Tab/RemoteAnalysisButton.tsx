@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import SelfAnalysisDesktopSetup from "./SelfAnalysisDesktopSetup";
+import { createPersonalApi } from "./personalDashboardData";
 import AnalysisSection from "./AnalysisSection";
 import AnalysisConfirmationDialog from "./AnalysisConfirmationDialog";
 import "./RemoteAnalysisButton.css";
@@ -17,7 +19,7 @@ export type RequestState = {
 };
 type Props = {
   apiBaseUrl: string; token: string; targetUserId: number; targetName: string;
-  meetingSessionId?: number; backgroundRequest?: RequestState;
+  isSelf?: boolean; meetingSessionId?: number; backgroundRequest?: RequestState;
   expanded?: boolean; onToggle?: () => void; onExpand?: () => void; details?: ReactNode;
   renderInline?: (parts: { action: ReactNode; panel: ReactNode }) => ReactNode;
 };
@@ -35,7 +37,8 @@ export const remoteAnalysisLabels: Record<string, string> = {
 const labels = remoteAnalysisLabels;
 
 export default function RemoteAnalysisButton({ apiBaseUrl, token, targetUserId, targetName, meetingSessionId, backgroundRequest,
-  expanded = false, onToggle, onExpand, details, renderInline }: Props) {
+  isSelf = false, expanded = false, onToggle, onExpand, details, renderInline }: Props) {
+  const selfApi = useMemo(() => createPersonalApi(apiBaseUrl, token, () => {}), [apiBaseUrl, token]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -214,6 +217,10 @@ export default function RemoteAnalysisButton({ apiBaseUrl, token, targetUserId, 
             onClick={() => void submit(`/${request.requestId}/retry-delivery`)}>Retry rejected email</button>}
         </footer>
       </section>;
+  const requestAction = <footer><button type="button" className="meetingAnalyzeButton"
+    disabled={busy || (!isSelf && !connected) || Boolean(isActive)} onClick={() => void submit("", {
+      requestId: requestId.current, targetUserId, meetingSessionId: meetingSessionId || null,
+    })}>Request analysis · 1 credit</button></footer>;
   const action = <div className="remoteAnalysisAction" onClick={e => e.stopPropagation()}>
     <button type="button" className="meetingAnalyzeButton remoteAnalyzeButton" disabled={targetUserId <= 0}
       onClick={() => setOpen(true)} title={targetUserId <= 0 ? "This participant must sign in to SignalTuner first" : "Request a PDF analysis"}>Analyze</button>
@@ -223,13 +230,13 @@ export default function RemoteAnalysisButton({ apiBaseUrl, token, targetUserId, 
       {requestStatus}
     </div>}
     <AnalysisConfirmationDialog open={open} name={targetName} credits={credits} loadingCredits={loadingCredits}
-      busy={busy} error={error} onClose={() => setOpen(false)}>
+      busy={busy} error={error} onClose={() => setOpen(false)} selfAnalysis={isSelf}>
       {loaded && <section>
         {isActive && <p>An analysis is already in progress for this user. Its status and cancellation controls are in the participant analysis section.</p>}
-        {!connected && <p>The updated SignalTuner desktop app must be running and signed in on this user’s device. Reopen this dialog after they connect.</p>}
-          <footer><button type="button" className="meetingAnalyzeButton" disabled={busy || !connected || Boolean(isActive)} onClick={() => void submit("", {
-            requestId: requestId.current, targetUserId, meetingSessionId: meetingSessionId || null,
-          })}>Request analysis · 1 credit</button></footer>
+        {!isSelf && !connected && <p>The updated SignalTuner desktop app must be running and signed in on this user’s device. Reopen this dialog after they connect.</p>}
+        {isSelf ? <SelfAnalysisDesktopSetup api={selfApi} userId={targetUserId} recovering={Boolean(pendingCreation.current)}>
+          {requestAction}
+        </SelfAnalysisDesktopSetup> : requestAction}
       </section>}
     </AnalysisConfirmationDialog>
   </div>;

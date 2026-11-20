@@ -39,6 +39,34 @@ function incidentText(html: string) {
   return document.body.textContent?.trim() || "";
 }
 
+function ServiceIncidentCard({ incident }: { incident: Incident }) {
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
+  const state = incidentState(incident.Status);
+  const label = state === "unknown" ? incident.Status || "Unknown" : state[0].toUpperCase() + state.slice(1);
+  const link = incidentReportLink(incident.Link);
+
+  return <article data-incident-state={state}>
+    <h5 className="teamsServiceIncidentHeading">
+      <button className="teamsServiceIncidentSummary" type="button" aria-expanded={expanded} aria-controls={detailsId}
+        onClick={() => setExpanded(value => !value)}>
+        <span className="teamsServiceIncidentSummaryText">
+          <span className="teamsServiceIncidentTitle">{incident.Title}</span>
+          <span className="teamsServiceDate">Updated {new Date(incident.PublishDate).toLocaleString()}</span>
+        </span>
+        <span className="teamsServiceIncidentLabel">{label}</span>
+        <span className="teamsServiceDisclosure" aria-hidden="true" />
+      </button>
+    </h5>
+    <div className="teamsServiceIncidentContent" id={detailsId} hidden={!expanded}>
+      {expanded && <>
+        <p className="teamsServiceDescription">{incidentText(incident.Description)}</p>
+        {link && <ExternalWebsiteLink href={link}>Read provider report on website</ExternalWebsiteLink>}
+      </>}
+    </div>
+  </article>;
+}
+
 export async function loadTeamsServiceStatus(apiBaseUrl: string, token: string, signal: AbortSignal): Promise<ServiceDetails> {
   const read = async (path: string) => {
     const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/User/${path}/3`, {
@@ -105,17 +133,7 @@ export function MeetingServiceStatusView({ details, error = "" }: { details: Ser
     <div className="teamsServiceIncidents" id={bodyId} hidden={!expanded}>
       {details && <><h4>Incidents for {name}</h4>
         {!details.incidents.length && <p>No incidents to display.</p>}
-        {details.incidents.map(incident => {
-          const state = incidentState(incident.Status);
-          const label = state === "unknown" ? incident.Status || "Unknown" : state[0].toUpperCase() + state.slice(1);
-          const link = incidentReportLink(incident.Link);
-          return <article key={incident.IncidentId} data-incident-state={state}>
-            <div className="teamsServiceIncidentHeading"><h5>{incident.Title}</h5><span className="teamsServiceIncidentLabel">{label}</span></div>
-            <p className="teamsServiceDate">Updated {new Date(incident.PublishDate).toLocaleString()}</p>
-            <p className="teamsServiceDescription">{incidentText(incident.Description)}</p>
-            {link && <ExternalWebsiteLink href={link}>Read provider report on website</ExternalWebsiteLink>}
-          </article>;
-        })}
+        {details.incidents.map(incident => <ServiceIncidentCard key={incident.IncidentId} incident={incident} />)}
         <ExternalWebsiteLink className="teamsServiceHistory" href="https://www.signaltuner.com/teamsstatus">See full report history on website</ExternalWebsiteLink>
       </>}
     </div>

@@ -1,5 +1,13 @@
 # Bot welcome and setup guide
 
+Production navigation correction (2026-11-20): the installed catalog app's ID is
+`b429569b-1074-48dc-b25c-a556e9f63631`, as observed in Teams' **Copy link to tab**.
+The backend `TeamsInvitations__TeamsAppId` must use that navigation ID for this
+installation. The manifest remains `12a01999-ead3-4e8a-9fca-0263cc470316`.
+See `signaltuner-back/docs/teams-bot-welcome.md` for the configuration release and
+verification record. This correction needs no frontend/manifest build, new
+permission or database migration; existing cards retain their original URLs.
+
 Implemented 2026-11-06. The backend now prepares a proactive Adaptive Card for a
 fresh group-chat installation; it remains a notification-only bot with no chat
 commands. See `signaltuner-back/docs/teams-bot-welcome.md` for routing, duplicate

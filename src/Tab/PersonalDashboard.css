@@ -9,6 +9,12 @@
 .personalDashboard .personalAnalysisActions > .remoteAnalysisAction { width: 180px; }
 .personalMeetingList { list-style: none; padding: 0; }
 .personalSectionHeading { margin: 0; font-size: 19px; }
+.personalMeetingsHeader { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 24px; }
+.personalMeetingsHeader .personalSectionHeading { margin: 0; min-width: 0; }
+.personalAddToMeeting { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; }
+.personalAddToMeeting svg { width: 20px; height: 20px; flex: none; }
+.personalMeetingInstallFeedback { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 13px; }
+.personalMeetingInstallFeedback[role="alert"] { color: var(--error-text); }
 .personalSectionToggle { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: 100%; padding: 8px 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
 .personalSectionToggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 .personalSectionToolbar { display: flex; justify-content: flex-end; padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--line); }
@@ -32,6 +38,8 @@
 .personalDashboard .textButton { font: inherit; color: var(--ink); background: transparent; border: 0; padding: 8px 0; text-decoration: underline; cursor: pointer; }
 .personalDashboard .textButton:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (max-width: 600px) {
+  .personalMeetingsHeader { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .personalAddToMeeting { justify-self: start; max-width: 100%; }
   .personalDashboard .personalAnalysisActions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

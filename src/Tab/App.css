@@ -1090,14 +1090,14 @@ a {
 
 .clientDownloads {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 10px 18px;
 }
 
 /* Match the website Downloads page while fitting the Teams activation panel. */
 .clientDownloadButton {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 8px;

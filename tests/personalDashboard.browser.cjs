@@ -18,13 +18,22 @@ async function scenario(t, options = {}) {
     export const app = { initialize: async () => {}, getContext: async () => {
       ${options.failContext ? 'throw new Error("Synthetic unavailable context");' : ''}
       ${options.delayContext ? 'await new Promise(resolve => { window.resolveSyntheticHost = resolve; });' : ''}
-      window.syntheticHostContext ||= {app:{appId:"11111111-1111-4111-8111-111111111111",theme:"default",host:{name:"Teams",clientType:${JSON.stringify(options.clientType ?? "desktop")}}},
+      window.syntheticHostContext ||= {app:{appId:${JSON.stringify(options.appId === undefined ? "11111111-1111-4111-8111-111111111111" : options.appId)},theme:"default",host:{name:${JSON.stringify(options.hostName ?? "Teams")},clientType:${JSON.stringify(options.clientType ?? "desktop")}}},
         page:{id:"home",frameContext:${JSON.stringify(options.frameContext ?? "content")},subPageId:${JSON.stringify(options.subPageId ?? "")}},
-        user:{id:"synthetic-oid",tenant:{id:"synthetic-tenant"}}, ${options.meeting ? 'meeting:{id:"synthetic-meeting"},chat:{id:"synthetic-chat"},' : ''}};
+        user:{id:"synthetic-oid",tenant:{id:${JSON.stringify(options.tenantId ?? "synthetic-tenant")}}}, ${options.meeting ? 'meeting:{id:"synthetic-meeting"},chat:{id:"synthetic-chat"},' : ''}};
     return structuredClone(window.syntheticHostContext); }, openLink: async link => { if (window.syntheticNavigationFailure) throw new Error("Synthetic navigation failure"); (window.syntheticLinks ||= []).push(link); }, registerOnThemeChangeHandler: () => {} };
     window.syntheticSsoTokenRequests = 0;
     export const authentication = { getAuthToken: async () => { window.syntheticSsoTokenRequests++; return "synthetic-teams-token"; } };
     export const meeting = { getMeetingDetails: callback => callback(null, null) };
+    export const ErrorCode = { NOT_SUPPORTED_ON_PLATFORM: 100, NOT_SUPPORTED_IN_CURRENT_CONTEXT: 501, USER_ABORT: 8000 };
+    export const appInstallDialog = {
+      isSupported: () => ${options.installSupported !== false},
+      openAppInstallDialog: async params => {
+        (window.syntheticInstallCalls ||= []).push(params);
+        if (window.syntheticInstallError) throw window.syntheticInstallError;
+        ${options.deferInstall ? 'await new Promise(resolve => { window.resolveSyntheticInstall = resolve; });' : ''}
+      }
+    };
     export const pages = {};` }));
   await page.route("**/api/**", async route => {
     const request = route.request(), url = new URL(request.url());
@@ -36,12 +45,15 @@ async function scenario(t, options = {}) {
     if (path === "User/Login") return reply({ token: "synthetic-session", user: { ...user, authProvider: "email" }, profileRequired: state.profileRequired || false });
     if (path === "User/teams-sso") return state.ssoFailure ? reply({ message: "Link your existing account before using Teams sign-in." }, 409)
       : reply({ token: "synthetic-session", user, profileRequired: state.profileRequired || false });
-    if (path === "User/signal/current") return state.noSignal ? reply({}, 404) : reply({ SignalScore: 94, SignalOverallStatus: state.connected ? "Healthy" : "Offline", SignalWifiStatus: "Healthy", SignalBandwidthStatus: "Fair", SignalSystemStatus: "Healthy", LastUpdated: new Date().toISOString() });
+    if (path === "User/signal/current") return state.noSignal ? reply({}, 404) : reply({ SignalScore: 94, SignalOverallStatus: state.connected ? "Healthy" : "Offline", SignalWifiStatus: "Healthy", SignalBandwidthStatus: "Fair", SignalSystemStatus: "Healthy", LastUpdated: state.signalTimestamp || new Date().toISOString() });
     if (path === "credits/account") return reply({ purchasedCredits: state.purchasedCredits ?? state.credits, availableReports: state.credits, subscription: state.subscription || null, isCustomer: state.isCustomer || false });
     if (path === "User/GetServiceStatus/3") return reply({ CurrentStatus: "Operational", DisplayName: "Microsoft Teams" });
     if (path === "User/GetServiceIncidents/3") return reply([]);
-    if (path === "User/activation-code") return reply({ activationCode: request.method() === "POST" ? "SYNTHETIC-CODE" : null, expiresAtUtc: new Date(Date.now() + 300000).toISOString(), serverNowUtc: new Date().toISOString() });
-    if (path === "remote-analysis/current-device") return reply({ connected: state.connected, supportsTestAnalysis: state.supportsTest !== false });
+    if (path === "User/activation-code") {
+      if (request.method() === "POST") state.activationCode = { activationCode: "SYNTHETIC-CODE", expiresAtUtc: new Date(Date.now() + 300000).toISOString() };
+      return reply({ activationCode: null, ...state.activationCode, serverNowUtc: new Date().toISOString() });
+    }
+    if (path === "remote-analysis/current-device") return state.failDesktop ? reply({}, 503) : reply({ connected: state.desktopConnected ?? state.connected, supportsTestAnalysis: state.supportsTest !== false });
     if (path === "remote-analysis/latest") return reply({ request: state.meetingRequests?.[url.searchParams.get("targetUserId")] || state.request });
     if (path === "remote-analysis/teams-meeting" && request.method() === "POST") {
       const body = JSON.parse(request.postData());
@@ -92,6 +104,216 @@ const meetingParticipants = [
   { userId: 17, displayName: "Synthetic Person", email: "synthetic@example.invalid", clientDataStatus: "active", signalScore: 94, overallStatus: "Healthy", meetingRole: "Organizer" },
   { userId: 18, displayName: "Offline Person", email: "offline@example.invalid", clientDataStatus: "offline", signalScore: 70, meetingRole: "Attendee" },
 ];
+
+for (const width of [390, 1100]) test(`native meeting setup opens from the collapsed personal dashboard at ${width}px`, async t => {
+  const appId = "22222222-2222-4222-8222-222222222222";
+  const { page, state } = await scenario(t, { width, appId, emptyMeetings: true, deferInstall: true });
+  await home(page);
+  const meetings = page.getByRole("region", { name: "Your Meetings", exact: true });
+  const add = meetings.getByRole("button", { name: "Add to a meeting", exact: true });
+  assert.equal(await meetings.getByRole("button", { name: "Your Meetings", exact: true }).getAttribute("aria-expanded"), "false");
+  assert.equal(await add.isEnabled(), true);
+  assert.equal(await page.evaluate(() => window.syntheticInstallCalls?.length || 0), 0);
+  await add.click();
+  await meetings.getByRole("button", { name: "Opening Teams…", exact: true }).waitFor();
+  assert.equal(await meetings.getByRole("button", { name: "Opening Teams…", exact: true }).isDisabled(), true);
+  await meetings.getByRole("button", { name: "Opening Teams…", exact: true }).evaluate(button => button.click());
+  assert.deepEqual(await page.evaluate(() => window.syntheticInstallCalls), [{ appId }]);
+  await page.evaluate(() => window.resolveSyntheticInstall());
+  await add.waitFor();
+  await meetings.getByRole("status").getByText(/Choose a meeting in Teams and complete setup/).waitFor();
+  assert.equal(await page.evaluate(() => window.syntheticLinks?.length || 0), 0);
+  assert.equal(state.calls.filter(call => call.method === "POST").length, 0);
+  assert.ok(await meetings.evaluate(element => element.scrollWidth <= element.clientWidth));
+  for (const theme of ["default", "dark"]) {
+    await page.evaluate(theme => { document.documentElement.dataset.teamsTheme = theme; }, theme);
+    if (process.env.PERSONAL_TEST_SCREENSHOTS) {
+      require("node:fs").mkdirSync(process.env.PERSONAL_TEST_SCREENSHOTS, { recursive: true });
+      await meetings.screenshot({ path: require("node:path").join(process.env.PERSONAL_TEST_SCREENSHOTS, `add-to-meeting-${width}-${theme}.png`) });
+    }
+  }
+  await meetings.getByRole("button", { name: "Your Meetings", exact: true }).click();
+  await meetings.getByText(/No Teams meetings yet/).waitFor();
+  assert.deepEqual(state.errors, []);
+});
+
+test("native meeting setup uses the Teams app link when the capability is unsupported", async t => {
+  const appId = "22222222-2222-4222-8222-222222222222", tenantId = "33333333-3333-4333-8333-333333333333";
+  const { page, state } = await scenario(t, { appId, tenantId, installSupported: false });
+  await home(page);
+  await page.getByRole("button", { name: "Add to a meeting", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => window.syntheticLinks), [`https://teams.microsoft.com/l/app/${appId}?tenantId=${tenantId}`]);
+  assert.equal(await page.evaluate(() => window.syntheticInstallCalls?.length || 0), 0);
+  await page.evaluate(() => { window.syntheticNavigationFailure = true; });
+  await page.getByRole("button", { name: "Add to a meeting", exact: true }).click();
+  await page.getByRole("alert").getByText(/Teams couldn't open the app setup/).waitFor();
+  assert.equal(state.calls.filter(call => call.method === "POST").length, 0);
+  assert.deepEqual(state.errors, []);
+});
+
+test("native meeting setup handles cancellation, errors and runtime capability failures", async t => {
+  const { page, state } = await scenario(t, { clientType: "ios" });
+  await home(page);
+  const add = page.getByRole("button", { name: "Add to a meeting", exact: true });
+  await page.evaluate(() => { window.syntheticInstallError = { errorCode: 8000 }; });
+  await add.click();
+  assert.equal(await page.getByRole("alert").count(), 0);
+  assert.equal(await page.evaluate(() => window.syntheticLinks?.length || 0), 0);
+  await page.evaluate(() => { window.syntheticInstallError = { errorCode: 1000, message: "Private synthetic diagnostic" }; });
+  await add.click();
+  await page.getByRole("alert").getByText(/Teams couldn't open the app setup/).waitFor();
+  assert.equal(await page.getByText("Private synthetic diagnostic").count(), 0);
+  assert.equal(await page.evaluate(() => window.syntheticLinks?.length || 0), 0);
+  await page.evaluate(() => { window.syntheticInstallError = { errorCode: 100 }; });
+  await add.click();
+  assert.equal(await page.getByRole("alert").count(), 0);
+  assert.deepEqual(await page.evaluate(() => window.syntheticLinks), ["https://teams.microsoft.com/l/app/11111111-1111-4111-8111-111111111111"]);
+  assert.equal(state.calls.filter(call => call.method === "POST").length, 0);
+  assert.deepEqual(state.errors, []);
+});
+
+for (const options of [{ appId: null }, { appId: "invalid-app-id" }, { hostName: "Outlook" }, { failContext: true }]) {
+  test(`native meeting setup fails safely without a Teams install target: ${JSON.stringify(options)}`, async t => {
+    const { page, state } = await scenario(t, options);
+    await home(page);
+    const meetings = page.getByRole("region", { name: "Your Meetings", exact: true });
+    await meetings.getByRole("status").waitFor();
+    assert.equal(await meetings.getByRole("button", { name: "Add to a meeting", exact: true }).isDisabled(), true);
+    assert.equal(await page.evaluate(() => window.syntheticInstallCalls?.length || 0), 0);
+    assert.equal(await page.evaluate(() => window.syntheticLinks?.length || 0), 0);
+    assert.deepEqual(state.errors, []);
+  });
+}
+
+for (const width of [390, 1100]) test(`self-analysis connects the desktop inside the open modal at ${width}px`, async t => {
+  const { page, state } = await scenario(t, { connected: false, width });
+  await page.getByRole("button", { name: "Continue without syncing" }).click();
+  await home(page);
+  await page.getByRole("button", { name: "Analysis + Report", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Analyze Synthetic Person", exact: true });
+  const setup = dialog.getByRole("region", { name: "Connect your desktop app" });
+  const activation = dialog.getByRole("region", { name: "Activate your desktop app" });
+  await setup.waitFor();
+  await activation.getByRole("group", { name: "Activation code: not generated" }).waitFor();
+  assert.equal(await activation.locator(".temporaryActivationCodePlaceholder").textContent(), "******");
+  await setup.getByText("Launch and Download will open an external browser.", { exact: true }).waitFor();
+  assert.equal(await setup.getByText(/outside Teams/).count(), 0);
+  if (process.env.PERSONAL_TEST_SCREENSHOTS) {
+    require("node:fs").mkdirSync(process.env.PERSONAL_TEST_SCREENSHOTS, { recursive: true });
+    for (const theme of ["default", "dark"]) {
+      await page.evaluate(theme => { document.documentElement.dataset.teamsTheme = theme; }, theme);
+      await activation.screenshot({ path: require("node:path").join(process.env.PERSONAL_TEST_SCREENSHOTS, `self-analysis-placeholder-${width}-${theme}.png`) });
+    }
+  }
+  assert.equal(await dialog.getByRole("button", { name: /Request analysis/ }).count(), 0);
+  assert.equal(state.calls.filter(call => call.path === "User/activation-code" && call.method === "POST").length, 0);
+  await setup.getByRole("link", { name: /^Launch desktop app/ }).click();
+  await setup.getByRole("link", { name: /^Download desktop app for Windows/ }).click();
+  assert.deepEqual(await page.evaluate(() => window.syntheticLinks), [
+    "https://www.signaltuner.com/Launch.html", "https://www.signaltuner.com/downloads/windows/SignalTuner.appinstaller",
+  ]);
+  await activation.getByRole("button", { name: "Generate activation code" }).click();
+  await activation.getByRole("group", { name: "Activation code", exact: true }).getByText("SYNTHETIC-CODE", { exact: true }).waitFor();
+  await activation.getByRole("button", { name: "Copy code", exact: true }).waitFor();
+  assert.equal(state.calls.filter(call => call.path === "User/activation-code" && call.method === "POST").length, 1);
+  for (const theme of ["default", "dark"]) {
+    await page.evaluate(theme => { document.documentElement.dataset.teamsTheme = theme; }, theme);
+    assert.equal(await dialog.locator(".analysisOverviewArrow").evaluate(element => getComputedStyle(element).color), theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)");
+    assert.ok(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth), `${width}px ${theme} modal overflow`);
+    if (process.env.PERSONAL_TEST_SCREENSHOTS) {
+      require("node:fs").mkdirSync(process.env.PERSONAL_TEST_SCREENSHOTS, { recursive: true });
+      await dialog.evaluate(element => { element.scrollTop = 0; });
+      await dialog.screenshot({ path: require("node:path").join(process.env.PERSONAL_TEST_SCREENSHOTS, `self-analysis-setup-${width}-${theme}.png`) });
+      await activation.screenshot({ path: require("node:path").join(process.env.PERSONAL_TEST_SCREENSHOTS, `self-analysis-code-${width}-${theme}.png`) });
+    }
+  }
+  // Desktop heartbeats and stale/missing signals must not prematurely enable analysis.
+  state.desktopConnected = true;
+  state.connected = true;
+  state.signalTimestamp = new Date(Date.now() - 300000).toISOString();
+  await activation.getByRole("button", { name: "Check connection" }).click();
+  await page.waitForTimeout(3500);
+  assert.equal(await dialog.getByRole("button", { name: /Request analysis/ }).count(), 0);
+  state.signalTimestamp = null;
+  // No refresh click: live polling must replace setup in the same dialog.
+  await dialog.getByRole("button", { name: /Request analysis/ }).waitFor();
+  assert.equal(await setup.count(), 0);
+  assert.equal(await dialog.getByText("SYNTHETIC-CODE", { exact: true }).count(), 0);
+  assert.equal(state.calls.filter(call => call.path === "remote-analysis" && call.method === "POST").length, 0);
+  await dialog.getByRole("button", { name: /Request analysis/ }).click();
+  await dialog.waitFor({ state: "detached" });
+  assert.equal(state.calls.filter(call => call.path === "remote-analysis" && call.method === "POST").length, 1);
+  assert.deepEqual(state.errors, []);
+});
+
+test("self-analysis availability failures and missing telemetry recover without reopening", async t => {
+  const { page, state } = await scenario(t, { failDesktop: true, noSignal: true });
+  await home(page);
+  await page.getByRole("button", { name: "Analysis + Report", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Analyze Synthetic Person", exact: true });
+  await dialog.getByRole("alert").getByText("Desktop availability could not be checked. Please retry.", { exact: true }).waitFor();
+  state.failDesktop = false;
+  await dialog.getByRole("button", { name: "Check connection" }).click();
+  await dialog.getByText("Live telemetry is not available yet.", { exact: true }).waitFor();
+  assert.equal(await dialog.getByRole("button", { name: /Request analysis/ }).count(), 0);
+  state.noSignal = false;
+  await dialog.getByRole("button", { name: /Request analysis/ }).waitFor();
+  state.desktopConnected = false;
+  await dialog.getByRole("heading", { name: "Connect your desktop app", exact: true }).waitFor();
+  await dialog.getByRole("button", { name: "Close analysis request" }).click();
+  const count = state.calls.filter(call => call.path === "User/activation-code").length;
+  await page.waitForTimeout(3500);
+  assert.equal(state.calls.filter(call => call.path === "User/activation-code").length, count);
+  assert.deepEqual(state.errors, []);
+});
+
+test("meeting analysis offers desktop setup only for the signed-in participant", async t => {
+  const { page, state } = await scenario(t, { meeting: true, participants: meetingParticipants, desktopConnected: false });
+  await page.getByRole("button", { name: "Analyze", exact: true }).first().click();
+  const self = page.getByRole("dialog", { name: "Analyze Synthetic Person", exact: true });
+  await self.getByRole("button", { name: "Generate activation code" }).waitFor();
+  assert.equal(await self.getByRole("button", { name: /Request analysis/ }).count(), 0);
+  state.desktopConnected = true;
+  await self.getByRole("button", { name: /Request analysis/ }).waitFor();
+  await self.getByRole("button", { name: "Close analysis request" }).click();
+  state.desktopConnected = false;
+  await page.getByRole("button", { name: "Analyze", exact: true }).nth(1).click();
+  const other = page.getByRole("dialog", { name: "Analyze Offline Person", exact: true });
+  await other.getByText(/must be running and signed in/).waitFor();
+  assert.equal(await other.getByRole("button", { name: "Generate activation code" }).count(), 0);
+  assert.equal(await other.getByRole("link", { name: /^Launch desktop app/ }).count(), 0);
+  assert.deepEqual(state.errors, []);
+});
+
+test("restricted Teams hosts retain in-modal activation without external desktop links", async t => {
+  const { page } = await scenario(t, { connected: false, clientType: "ios" });
+  await page.getByRole("button", { name: "Continue without syncing" }).click();
+  await home(page);
+  await page.getByRole("button", { name: "Analysis + Report", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Analyze Synthetic Person", exact: true });
+  await dialog.getByRole("button", { name: "Generate activation code" }).waitFor();
+  assert.equal(await dialog.getByRole("link").count(), 0);
+});
+
+test("an uncertain self-analysis can recover its original request after desktop disconnection", async t => {
+  const { page, state } = await scenario(t, { loseResponse: true });
+  await home(page);
+  await startPersonalReport(page);
+  const dialog = page.getByRole("dialog", { name: "Analyze Synthetic Person", exact: true });
+  await dialog.getByRole("alert").waitFor();
+  state.request = null;
+  state.desktopConnected = false;
+  state.noSignal = true;
+  await page.waitForTimeout(3500);
+  assert.equal(await dialog.getByRole("button", { name: /Request analysis/ }).isEnabled(), true);
+  assert.equal(await dialog.getByRole("button", { name: "Generate activation code" }).count(), 0);
+  await dialog.getByRole("button", { name: /Request analysis/ }).click();
+  await dialog.waitFor({ state: "detached" });
+  const submitted = state.calls.filter(call => call.path === "remote-analysis" && call.method === "POST");
+  assert.equal(submitted.length, 2);
+  assert.deepEqual(submitted[0].body, submitted[1].body);
+  assert.deepEqual(state.errors, []);
+});
 
 for (const credits of [0, null]) test(`personal report requires confirmation and keeps idle actions available with credits ${credits}`, async t => {
   const { page, state } = await scenario(t, { credits });
